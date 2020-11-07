@@ -1,0 +1,56 @@
+{
+  "name": "deviceTraining",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "start": "react-native start",
+    "test": "jest",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@klarna/react-native-zlib": "^1.0.1",
+    "@react-native-community/async-storage": "^1.11.0",
+    "@reduxjs/toolkit": "^1.4.0",
+    "@tensorflow/tfjs": "^2.6.0",
+    "@tensorflow/tfjs-backend-webgl": "^2.6.0",
+    "@tensorflow/tfjs-react-native": "^0.3.0",
+    "base-64": "^1.0.0",
+    "expo-camera": "^8.3.1",
+    "expo-constants": "^9.1.1",
+    "expo-file-system": "^9.1.0",
+    "expo-gl": "^8.4.0",
+    "expo-gl-cpp": "^8.4.0",
+    "expo-image-picker": "^8.4.0",
+    "expo-media-library": "^8.4.0",
+    "expo-permissions": "^9.1.0",
+    "jpeg-js": "^0.4.1",
+    "pako": "^1.0.11",
+    "pullstate": "^1.16.0",
+    "react": "16.13.1",
+    "react-native": "0.63.2",
+    "react-native-fs": "^2.16.6",
+    "react-native-table-component": "^1.2.1",
+    "react-native-unimodules": "^0.10.1",
+    "react-redux": "^7.2.1",
+    "react-zlib-js": "^1.0.5",
+    "realm": "^6.1.0",
+    "redux": "^4.0.5",
+    "socket.io-client": "^2.3.0",
+    "underscore": "^1.10.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.11.1",
+    "@babel/runtime": "^7.11.2",
+    "@react-native-community/eslint-config": "^2.0.0",
+    "babel-jest": "^26.2.2",
+    "eslint": "^7.6.0",
+    "jest": "^26.2.2",
+    "metro-react-native-babel-preset": "^0.61.0",
+    "react-test-renderer": "16.13.1"
+  },
+  "jest": {
+    "preset": "react-native"
+  }
+}
