@@ -1,8 +1,4 @@
-#cloud required imports
 import os
-# from firebase_admin import credentials, initialize_app
-
-#custom imports
 import ast
 from flask import Flask , jsonify, request, Response
 from flask_socketio import SocketIO, emit
@@ -18,34 +14,18 @@ import orjson
 import mgzip
 import inception
 import inception_resnet
+import argparse
 
-# class SplitB(nn.Module):
-#   def __init__(self):
-#     super(ModelB, self).__init__()
+parser = argparse.ArgumentParser()
+parser.add_argument("--model_name", type=str)
 
-#     self.conv = nn.Sequential(
-#     nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1, bias=False),
-#     nn.MaxPool2d(kernel_size=2,stride=2),
-#     nn.ReLU(inplace=True),
-#     nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1, bias=False),
-#     nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1, bias=False),
-#     nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
-#     nn.MaxPool2d(kernel_size=2, stride=2),
-#     nn.ReLU(inplace=True))
+class Identity(nn.Module):
+    def __init__(self):
+        super().__init__()
+    def forward(self, x):
+        return x
 
-#     self.linear = nn.Sequential(
-#       nn.Linear(256*3*3, 1024,bias=False),
-#       nn.ReLU(inplace=True),
-#       nn.Linear(1024, 512, bias=False),
-#       nn.ReLU(inplace=True)
-#     )
-#   def forward(self, x):
-#     output = self.conv(x)
-#     output = output.view(-1, 256*3*3)
-#     output = self.linear(output)
-
-#     return output
-class SplitB(nn.Module):
+class ResNetSplitB(nn.Module):
     def __init__(self):
         super(SplitB, self).__init__()
         resnet_model = models.resnet50(pretrained=False)
@@ -66,67 +46,59 @@ class SplitB(nn.Module):
         output = output.view(-1, 2048)
         return output
 
-# class SplitB(nn.Module):
-# 	def __init__(self):
-# 		super(SplitB, self).__init__()
+class VGGSplitB(nn.Module):
+	def __init__(self):
+		super(SplitB, self).__init__()
 
-# 		conv_layers = [module for module in models.vgg19(pretrained=False).features.modules() if type(module) != nn.Sequential][3:]
-# 		avgpool = [module for module in models.vgg19(pretrained=False).avgpool.modules() if type(module) != nn.Sequential]
-# 		self.conv_model = nn.Sequential(*conv_layers,
-# 			*avgpool)
+		conv_layers = [module for module in models.vgg19(pretrained=False).features.modules() if type(module) != nn.Sequential][3:]
+		avgpool = [module for module in models.vgg19(pretrained=False).avgpool.modules() if type(module) != nn.Sequential]
+		self.conv_model = nn.Sequential(*conv_layers,
+			*avgpool)
 
-# 		classifier = [module for module in models.vgg19(pretrained=False).classifier.modules() if type(module) != nn.Sequential][:-1]
-# 		self.fc_model = nn.Sequential(*classifier)
-# 	def forward(self, x):
-# 		output = self.conv_model(x)
-# 		output = output.view(-1, 25088)
-# 		output = self.fc_model(output)
-# 		return output
+		classifier = [module for module in models.vgg19(pretrained=False).classifier.modules() if type(module) != nn.Sequential][:-1]
+		self.fc_model = nn.Sequential(*classifier)
+	def forward(self, x):
+		output = self.conv_model(x)
+		output = output.view(-1, 25088)
+		output = self.fc_model(output)
+		return output
 
-class Identity(nn.Module):
+class InceptionV3SplitB(nn.Module):
     def __init__(self):
         super().__init__()
+        self.model = inception.inceptionv3()
     def forward(self, x):
-        return x
+        output = self.model(x)
+        output = output.view(-1, 2048)
+        return output
 
-# class SplitB(nn.Module):
-#     def __init__(self):
-#         super().__init__()
-#         self.model = inception.inceptionv3()
-#     def forward(self, x):
-#         output = self.model(x)
-#         output = output.view(-1, 2048)
-#         return output
+class InceptionResNetSplitB(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.model = inception_resnet.inceptionresnetv2(pretrained=False, num_classes=1000)
+    def forward(self, x):
+        output = self.model(x)
+        output = output.view(-1, 1536)
+        return output
 
-# class SplitB(nn.Module):
-#     def __init__(self):
-#         super().__init__()
-#         self.model = inception_resnet.inceptionresnetv2(pretrained=False, num_classes=1000)
-#     def forward(self, x):
-#         output = self.model(x)
-#         output = output.view(-1, 1536)
-#         return output
-
-# class SplitB(nn.Module):
-#     def __init__(self):
-#         super().__init__()
-#         self.features = models.densenet121().features
-#         self.features.conv0 = Identity()
-#         self.features.norm0 = Identity()
-#         self.features.relu0 = Identity()
-#         self.features.pool0 = Identity()
-#     def forward(self, x):
-#         output = self.features(x)
-#         output = nn.functional.adaptive_avg_pool2d(output, (1, 1))
-#         output = output.view(-1, 1024)
-#         return output
+class DenseNetSplitB(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.features = models.densenet121().features
+        self.features.conv0 = Identity()
+        self.features.norm0 = Identity()
+        self.features.relu0 = Identity()
+        self.features.pool0 = Identity()
+    def forward(self, x):
+        output = self.features(x)
+        output = nn.functional.adaptive_avg_pool2d(output, (1, 1))
+        output = output.view(-1, 1024)
+        return output
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", ping_timeout=180, ping_interval=10)
-model = SplitB()
-model.to(torch.float32)
-model.to(device)
+
 loss_fn = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-3)
 output_dict_B = []
@@ -207,4 +179,18 @@ def back_propagation():
 
 port = int(os.environ.get('PORT', 8080))
 if __name__=="__main__":
+    args = parser.parse_args()
+    if args.model_name == "resnet":
+        model = ResNetSplitB()
+    elif args.model_name == "inception":
+        model = InceptionV3SplitB()
+    elif args.model_name == "inception_resnet":
+        model = InceptionResNetSplitB()
+    elif args.model_name == "densenet": 
+        model = DenseNetSplitB()
+    elif args.model_name == "vgg":
+        model = VGGSplitB()
+
+    model.to(torch.float32)
+    model.to(device)
     socketio.run(app, host='0.0.0.0', debug=True, port=port)

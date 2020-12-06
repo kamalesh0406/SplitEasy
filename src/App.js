@@ -35,7 +35,7 @@ import io from 'socket.io-client';
 
 
 const App: () => React$Node = () => {
-  const server_url = 'http://52.194.230.228:8080';
+  const server_url = '....';
   const socket = new io(server_url, {
     query: 'b64=1',
     pingTimeout: 360000
